@@ -5,6 +5,7 @@ import com.capitalone.dashboard.status.TestResultAuditStatus;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 public class TestResultsAuditResponse extends AuditReviewResponse<TestResultAuditStatus> {
@@ -19,7 +20,9 @@ public class TestResultsAuditResponse extends AuditReviewResponse<TestResultAudi
 
     private double percentTraceability;
 
-    private List<String> totalStories = new ArrayList<>();
+    private List<HashMap> totalStories = new ArrayList<HashMap>();
+
+    private List<String> totalCompletedStories = new ArrayList<>();
 
     public Collection<TestCapability> getTestCapabilities() {
         return testCapabilities;
@@ -45,11 +48,12 @@ public class TestResultsAuditResponse extends AuditReviewResponse<TestResultAudi
         this.lastExecutionTime = lastExecutionTime;
     }
 
-    public List<String> getTotalStories() {
+
+    public List<HashMap> getTotalStories() {
         return totalStories;
     }
 
-    public void setTotalStories(List<String> totalStories) {
+    public void setTotalStories(List<HashMap> totalStories) {
         this.totalStories = totalStories;
     }
 
@@ -76,4 +80,12 @@ public class TestResultsAuditResponse extends AuditReviewResponse<TestResultAudi
     public void setPercentTraceability(double percentTraceability) {
         this.percentTraceability = percentTraceability;
     }
+    public List<String> getTotalCompletedStories() {
+        return totalCompletedStories;
+    }
+
+    public void setTotalCompletedStories(List<String> totalCompletedStories) {
+        this.totalCompletedStories = totalCompletedStories;
+    }
 }
+

@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @ConfigurationProperties
 public class ApiSettings {
@@ -17,14 +19,17 @@ public class ApiSettings {
     private String corsWhitelist;
     private String peerReviewContexts;
     private String peerReviewApprovalText;
-    private String serviceAccountOU;
+    private List<String> serviceAccountOU;
+    private String commitLogIgnoreAuditRegEx;
     @Value("${maxDaysRangeForQuery:60}") // 60 days max
     private long maxDaysRangeForQuery;
     private boolean logRequest;
 
     private String featureIDPattern;
+    @Value("${threshold:80}")
     private int threshold;
-    
+    private List<String> validStoryStatus;
+
     public String getKey() {
         return key;
     }
@@ -81,11 +86,11 @@ public class ApiSettings {
         this.peerReviewApprovalText = peerReviewApprovalText;
     }
 
-    public String getServiceAccountOU() {
+    public List<String> getServiceAccountOU() {
         return serviceAccountOU;
     }
 
-    public void setServiceAccountOU(String serviceAccountOU) {
+    public void setServiceAccountOU(List<String> serviceAccountOU) {
         this.serviceAccountOU = serviceAccountOU;
     }
 
@@ -104,4 +109,22 @@ public class ApiSettings {
     public void setThreshold(int threshold) {
         this.threshold = threshold;
     }
+
+    public List<String> getValidStoryStatus() {
+        return validStoryStatus;
+    }
+
+    public void setValidStoryStatus(List<String> validStoryStatus) {
+        this.validStoryStatus = validStoryStatus;
+    }
+
+    public String getCommitLogIgnoreAuditRegEx() {
+        return commitLogIgnoreAuditRegEx;
+    }
+
+    public void setCommitLogIgnoreAuditRegEx(String commitLogIgnoreAuditRegEx) {
+        this.commitLogIgnoreAuditRegEx = commitLogIgnoreAuditRegEx;
+    }
+
 }
+
