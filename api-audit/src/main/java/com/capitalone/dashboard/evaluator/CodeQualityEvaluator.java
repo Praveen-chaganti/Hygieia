@@ -107,8 +107,8 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
         ObjectMapper mapper = new ObjectMapper();
 
         if (CollectionUtils.isEmpty(codeQualities)) {
-            codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_DETAIL_MISSING);
-            return codeQualityAuditResponse;
+
+            return missingDetails(collectorItem);
         } else {
             codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_CHECK_IS_CURRENT);
         }
@@ -120,35 +120,8 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
 
         for (CodeQualityMetric metric : returnQuality.getMetrics()) {
             //TODO: This is sonar specific - need to move this to api settings via properties file
-            if (metric.getName().equalsIgnoreCase("quality_gate_details")) {
+            if (StringUtils.equalsIgnoreCase(metric.getName(), "quality_gate_details")) {
                 codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_GATES_FOUND);
-                try {
-                    JSONObject qualityGateDetails = (JSONObject) new JSONParser().parse(metric.getValue().toString());
-                    JSONArray conditions = (JSONArray) qualityGateDetails.get("conditions");
-                    Iterator itr = conditions.iterator();
-
-                    // Iterate through the quality_gate conditions
-                    while(itr.hasNext()) {
-                        Map condition = ((Map) itr.next());
-
-                        // Set audit statuses for Thresholds found if they are defined in quality_gate_details metric
-                        if(condition.containsKey("error")) {
-                            if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.BLOCKER_VIOLATIONS.getType())) {
-                                codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_BLOCKER_FOUND);
-                            } else if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.CRITICAL_VIOLATIONS.getType())) {
-                                codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CRITICAL_FOUND);
-                            } else if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.UNIT_TEST.getType())) {
-                                codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_UNIT_TEST_FOUND);
-                            } else if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.NEW_COVERAGE.getType())) {
-                                codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CODE_COVERAGE_FOUND);
-                            }
-                        }
-
-                    }
-                } catch (ParseException e) {
-                    LOGGER.error("Error in CodeQualityEvaluator.getStaticAnalysisResponse() - Unable to parse quality_gate metrics - " + e.getMessage());
-                }
-
                 if (metric.getStatus() != null) {
                     codeQualityAuditResponse.addAuditStatus("ok".equalsIgnoreCase(metric.getStatus().toString()) ? CodeQualityAuditStatus.CODE_QUALITY_AUDIT_OK : CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL);
                 } else {
@@ -161,10 +134,49 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
                             String level = values.get("level");
                             codeQualityAuditResponse.addAuditStatus(level.equalsIgnoreCase("ok") ? CodeQualityAuditStatus.CODE_QUALITY_AUDIT_OK : CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL);
                         }
-                        break;
+                        try {
+                            JSONObject qualityGateDetails = (JSONObject) new JSONParser().parse(metric.getValue().toString());
+                            JSONArray conditions = (JSONArray) qualityGateDetails.get("conditions");
+                            System.out.println("conditions");
+                            Iterator itr = conditions.iterator();
+
+                            // Iterate through the quality_gate conditions
+                            while(itr.hasNext()) {
+                                Map condition = ((Map) itr.next());
+
+                                // Set audit statuses for Thresholds found if they are defined in quality_gate_details metric
+                                if(condition.containsKey("error")) {
+                                    if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.BLOCKER_VIOLATIONS.getType())) {
+                                        codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_BLOCKER_FOUND);
+                                        if(StringUtils.equalsIgnoreCase(condition.get("level").toString(), "OK")){
+                                            codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_BLOCKER_MET);
+                                        }
+                                    } else if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.CRITICAL_VIOLATIONS.getType())) {
+                                        codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CRITICAL_FOUND);
+                                        if(StringUtils.equalsIgnoreCase(condition.get("level").toString(), "OK")) {
+                                            codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CRITICAL_MET);
+                                        }
+                                    } else if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.UNIT_TEST.getType())) {
+                                        codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_UNIT_TEST_FOUND);
+                                        if(StringUtils.equalsIgnoreCase(condition.get("level").toString(), "OK")) {
+                                            codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_UNIT_TEST_MET);
+                                        }
+                                    } else if(StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.NEW_COVERAGE.getType())) {
+                                        codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CODE_COVERAGE_FOUND);
+                                            if(StringUtils.equalsIgnoreCase(condition.get("level").toString(), "OK")) {
+                                                codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CODE_COVERAGE_MET);
+                                            }
+                                    }
+                                }
+
+                            }
+                        } catch (ParseException e) {
+                            LOGGER.error("Error in CodeQualityEvaluator.getStaticAnalysisResponse() - Unable to parse quality_gate metrics - " + e.getMessage());
+                        }
                     } catch (IOException e) {
                         LOGGER.error("Error in CodeQualityEvaluator.getStaticAnalysisResponse() - Unable to parse quality_gate metrics - " + e.getMessage());
                     }
+
                 }
             }
 
@@ -206,13 +218,33 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
         missingInputResponse.addAuditStatus(CodeQualityAuditStatus.COLLECTOR_ITEM_ERROR);
         missingInputResponse.setLastUpdated(codeQualityCollectorItem.getLastUpdated());
         missingInputResponse.setUrl((String)codeQualityCollectorItem.getOptions().get("instanceUrl"));
+        missingInputResponse.setMessage("Invalid projectID or The sonar job itself doesn't have any data in it");
+        missingInputResponse.setName((String)codeQualityCollectorItem.getOptions().get("projectName"));
         return  missingInputResponse;
-        }
+    }
 
     private CodeQualityAuditResponse getNotConfigured(){
         CodeQualityAuditResponse notConfigured = new CodeQualityAuditResponse();
         notConfigured.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_NOT_CONFIGURED);
-       return  notConfigured;
+        notConfigured.setMessage("No CODE_QUALITY job configured to the dashboard");
+        return  notConfigured;
+    }
+
+    /**
+     *It will return response when codeQuality details missing not found in given date range.
+     * @param codeQualityCollectorItem
+     * @return missing details audit-resoonse.
+     */
+    private CodeQualityAuditResponse missingDetails(CollectorItem codeQualityCollectorItem ){
+        CodeQualityAuditResponse detailsmissing =new CodeQualityAuditResponse();
+        detailsmissing.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_DETAIL_MISSING);
+        detailsmissing.setLastUpdated(codeQualityCollectorItem.getLastUpdated());
+        List<CodeQuality> codeQualities = codeQualityRepository.findByCollectorItemIdOrderByTimestampDesc(codeQualityCollectorItem.getId());
+        CodeQuality returnCodeQuality = codeQualities.get(0);
+        detailsmissing.setUrl(returnCodeQuality.getUrl());
+        detailsmissing.setName(returnCodeQuality.getName());
+        detailsmissing.setLastExecutionTime(returnCodeQuality.getTimestamp());
+        return detailsmissing;
     }
 
 
