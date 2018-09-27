@@ -220,7 +220,7 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
     }
 
     private void auditStatusWhenQualityGateDetailsFound(Map condition, CodeQualityAuditResponse codeQualityAuditResponse) {
-        if (condition.containsKey("error")) {
+        if (condition.containsValue("critical_violations")|| condition.containsValue("blocker_violations") || condition.containsValue("coverage")|| condition.containsValue("test_success_density")) {
             if (StringUtils.equalsIgnoreCase(condition.get("metric").toString(), CodeQualityMetricType.BLOCKER_VIOLATIONS.getType())) {
                 codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_BLOCKER_FOUND);
                 codeQualityAuditResponse.addAuditStatus((StringUtils.equalsIgnoreCase(condition.get("level").toString(), "OK")? CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_BLOCKER_MET : CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL));
@@ -238,10 +238,10 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
                 codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CODE_COVERAGE_FOUND);
                 codeQualityAuditResponse.addAuditStatus((StringUtils.equalsIgnoreCase(condition.get("level").toString(), "OK")? CodeQualityAuditStatus.CODE_QUALITY_THRESHOLD_CODE_COVERAGE_MET : CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL));
             }
+        }else{
+            codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL);
         }
-          if(!codeQualityAuditResponse.getAuditStatuses().contains("CODE_QUALITY_AUDIT_FAIL")){
-                codeQualityAuditResponse.addAuditStatus(CodeQualityAuditStatus.CODE_QUALITY_AUDIT_OK);
-            }
+        codeQualityAuditResponse.addAuditStatus(StringUtils.containsIgnoreCase(codeQualityAuditResponse.getAuditStatuses().toString(), "CODE_QUALITY_AUDIT_FAIL")?CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL:CodeQualityAuditStatus.CODE_QUALITY_AUDIT_OK);
     }
 
     private void auditStatusWhenQualityGateDetailsNotFound(CodeQualityMetric metric, CodeQualityAuditResponse codeQualityAuditResponse) {
