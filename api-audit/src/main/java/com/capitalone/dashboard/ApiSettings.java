@@ -24,6 +24,8 @@ public class ApiSettings {
     @Value("${maxDaysRangeForQuery:60}") // 60 days max
     private long maxDaysRangeForQuery;
     private boolean logRequest;
+    @Value("${codeQualityMode:Preventive}")
+    private String codeQualityMode;
 
     private String featureIDPattern;
     @Value("${threshold:80}")
@@ -125,5 +127,8 @@ public class ApiSettings {
     public void setCommitLogIgnoreAuditRegEx(String commitLogIgnoreAuditRegEx) {
         this.commitLogIgnoreAuditRegEx = commitLogIgnoreAuditRegEx;
     }
+    public String getCodeQualityMode() { return codeQualityMode; }
+
+    public void setCodeQualityMode(String codeQualityMode) { this.codeQualityMode = codeQualityMode;}
 
 }
