@@ -70,7 +70,7 @@ public class CodeQualityEvaluatorTest {
         Assert.assertEquals(true, response.getAuditStatuses().toString().contains("QUALITY_PROFILE_VALIDATION_AUDIT_NO_CHANGE"));
         Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_THRESHOLD_CODE_COVERAGE_MET"));
         Assert.assertEquals(false, response.getAuditStatuses().toString().contains("CODE_QUALITY_THRESHOLD_UNIT_TEST_MET"));
-        Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_AUDIT_OK"));
+        Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_AUDIT_FAIL"));
         Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_GATES_FOUND"));
     }
 
