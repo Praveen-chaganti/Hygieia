@@ -125,7 +125,7 @@ public class CodeQualityEvaluator extends Evaluator<CodeQualityAuditResponse> {
 
                 if (metric.getStatus() != null) {
                     // this applies for sonar 5 style data for quality_gate_details
-                    codeQualityAuditResponse.addAuditStatus("Ok".equalsIgnoreCase(metric.getStatus().toString()) ? CodeQualityAuditStatus.CODE_QUALITY_AUDIT_OK : CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL);
+                    codeQualityAuditResponse.addAuditStatus(("Ok".equalsIgnoreCase(metric.getStatus().toString()) || ("Warning".equalsIgnoreCase(metric.getStatus().toString()))) ? CodeQualityAuditStatus.CODE_QUALITY_AUDIT_OK : CodeQualityAuditStatus.CODE_QUALITY_AUDIT_FAIL);
                 } else {
                     // this applies for sonar 6.7 style data for quality_gate_details
                     TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {

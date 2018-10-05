@@ -67,8 +67,9 @@ public class CodeQualityEvaluatorTest {
 
         Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_CHECK_IS_CURRENT"));
         Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_THRESHOLD_BLOCKER_MET"));
+        Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_THRESHOLD_UNIT_TEST_MET"));
         Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_AUDIT_OK"));
-        Assert.assertEquals(true, response.getAuditStatuses().toString().contains("CODE_QUALITY_GATES_FOUND"));
+        Assert.assertEquals(false, response.getAuditStatuses().toString().contains("CODE_QUALITY_GATES_FOUND"));
     }
 
     @Test
@@ -152,8 +153,8 @@ public class CodeQualityEvaluatorTest {
     private List<CodeQuality> makeCodeQuality1(String name) {
         CodeQuality codeQuality = new CodeQuality();
         CodeQualityMetric  codeQualityMetric1 = new CodeQualityMetric();
-        codeQualityMetric1.setName("quality_gate_details");
-        codeQualityMetric1.setStatus(CodeQualityMetricStatus.Ok);
+        codeQualityMetric1.setName("test_success_density");
+        codeQualityMetric1.setStatus(CodeQualityMetricStatus.Warning);
         CodeQualityMetric  codeQualityMetric2 = new CodeQualityMetric();
         codeQualityMetric2.setName("blocker_violations");
         codeQualityMetric2.setStatus(CodeQualityMetricStatus.Ok);
