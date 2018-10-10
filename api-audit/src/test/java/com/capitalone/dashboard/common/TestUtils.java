@@ -95,7 +95,7 @@ public class TestUtils {
     public static void loadAuditResults(AuditResultRepository auditResultRepository) throws IOException {
         Gson gson = GsonUtil.getGson();
         String json = IOUtils.toString(Resources.getResource("./audit_results/audit_results.json"));
-        List<AuditResult> auditResults = gson.fromJson(json, new TypeToken<List<Feature>>(){}.getType());
+        List<AuditResult> auditResults = gson.fromJson(json, new TypeToken<List<AuditResult>>(){}.getType());
         auditResultRepository.save(auditResults);
     }
 

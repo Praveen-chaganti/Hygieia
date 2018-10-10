@@ -1,0 +1,17 @@
+{
+  "id" : "5bbcd5efeee33c09f4e97569",
+  "_class" : "com.capitalone.dashboard.model.AuditResult",
+  "dashboardId" : "59ccc943222a97057df05456",
+  "dashboardTitle" : "Sample",
+  "lineOfBusiness" : "Bus",
+  "configItemBusServName" : "ASV",
+  "configItemBusAppName" : "BAP",
+  "configItemBusServOwner" : "Jhon",
+  "configItemBusAppOwner" : "ABC",
+  "auditType" : "TEST_RESULT",
+  "auditTypeStatus" : "NOT_CONFIGURED",
+  "auditStatus" : "NA",
+  "url" : "",
+  "auditDetails" : "",
+  "timestamp" : 1539101884952
+}
