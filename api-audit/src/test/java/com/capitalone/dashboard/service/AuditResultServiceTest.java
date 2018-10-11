@@ -20,9 +20,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.validation.constraints.AssertTrue;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,24 +45,31 @@ public class AuditResultServiceTest {
 
     @Test
     public void loadAuditResultsById() throws IOException {
-        AuditResult actual = getActualResponse(auditResultService.findById(new ObjectId("5bbcd5efeee33c09f4e97569")));
+        AuditResult actual = getActualResponse(auditResultService.getAuditResult(new ObjectId("5bbcd5efeee33c09f4e97569")));
         AuditResult expected = getExpectedReviewResponse("AuditResults.json");
         assertDashboardAudit(actual, expected);
     }
 
     @Test
     public void loadAuditResultByTitle() throws IOException{
-        Iterable<AuditResult> actual =  auditResultService.findByDashboardTitle("Sample");
+        Iterable<AuditResult> actual =  auditResultService.getAuditResultsByTitle("Sample");
+        List<ObjectId> dashboardIds =new ArrayList<>();
         actual.forEach(auditResult ->{
             auditResult.getDashboardTitle().equalsIgnoreCase("");
             Assert.assertEquals(true, auditResult.getDashboardTitle().equalsIgnoreCase("Sample"));
+            dashboardIds.add(auditResult.getDashboardId());
         });
+        Assert.assertEquals(2, dashboardIds.size());
     }
 
     @Test
     public void loadAuditResultsByALL(){
-
-
+        Iterable<AuditResult> actual = auditResultService.getAuditResults();
+        List<ObjectId> ids =new ArrayList<>();
+        actual.forEach(auditResult -> {
+            ids.add(auditResult.getId());
+        });
+        Assert.assertEquals(auditResultRepository.count(), ids.size());
     }
 
 

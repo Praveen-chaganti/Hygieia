@@ -1,7 +1,6 @@
 [
   {
   "id" : "5bbcd5efeee33c09f4e97569",
-  "_class" : "com.capitalone.dashboard.model.AuditResult",
   "dashboardId" : "59ccc943222a97057df05456",
   "dashboardTitle" : "Sample",
   "lineOfBusiness" : "Bus",
@@ -18,7 +17,6 @@
   },
   {
     "id" : "5bbcd5efeee33c09f4e9756c",
-    "_class" : "com.capitalone.dashboard.model.AuditResult",
     "dashboardId" : "59ccc943222a97057df05456",
     "dashboardTitle" : "Sample",
     "lineOfBusiness" : "BUS",
@@ -35,7 +33,6 @@
   },
   {
     "_id" : "5bbcd5efeee33c09f4e97574",
-    "_class" : "com.capitalone.dashboard.model.AuditResult",
     "dashboardId" : "59ccc944222a97057df0545e",
     "dashboardTitle" : "sample3",
     "lineOfBusiness" : "BUS",
@@ -49,7 +46,22 @@
     "url" : "",
     "auditDetails" : "",
     "timestamp" : 1539101884952
+  },
+  {
+    "_id" : "5bbcd5efeee33c09f4e9756c",
+    "dashboardId" : "59ccc944222a97057df0545a",
+    "dashboardTitle" : "sample4",
+    "lineOfBusiness" : "BUS",
+    "configItemBusServName" : "ASVC",
+    "configItemBusAppName" : "BAPC1",
+    "configItemBusServOwner" : "Jhon",
+    "configItemBusAppOwner" : "Ram",
+    "auditType" : "CODE_QUALITY",
+    "auditTypeStatus" : "NOT_CONFIGURED",
+    "auditStatus" : "NA",
+    "url" : "",
+    "auditDetails" : "",
+    "timestamp" : 1539101884952
   }
-
 
 ]
