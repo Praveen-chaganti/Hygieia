@@ -7,5 +7,6 @@ public interface TestExecutionRestClient {
     Promise<Iterable<TestExecution.Test>> getTests(TestExecution key);
     public Promise<Void> setTests(TestExecution testExec);
     Promise<Void> removeTest(TestExecution testExecKey, TestExecution.Test testKey);
+    Iterable<TestExecution.Test> printTests(TestExecution testExecution);
 
 }

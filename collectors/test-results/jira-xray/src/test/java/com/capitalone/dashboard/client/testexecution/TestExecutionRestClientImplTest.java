@@ -2,7 +2,6 @@ package com.capitalone.dashboard.client.testexecution;
 
 import com.capitalone.dashboard.client.JiraXRayRestClientImpl;
 import com.capitalone.dashboard.client.JiraXRayRestClientSupplier;
-import com.capitalone.dashboard.client.JiraXrayRestClientFactory;
 import com.capitalone.dashboard.client.api.domain.TestExecution;
 import org.junit.After;
 import org.junit.Before;
@@ -25,7 +24,7 @@ public class TestExecutionRestClientImplTest {
     @Before
     public void setUp() throws Exception {
         restClient= (JiraXRayRestClientImpl) restClientSupplier.get();
-        testExecution=new TestExecution(new URI(""),TEST_EXEC_KEY,1977l);
+        testExecution=new TestExecution(new URI(""),TEST_EXEC_KEY,1977L);
 
     }
 
@@ -36,7 +35,7 @@ public class TestExecutionRestClientImplTest {
 
     @Test
     public void testGetTests() throws Exception {
-        Iterable<TestExecution.Test>tests= restClient.getTestExecutionClient().getTests(testExecution).claim();
+        Iterable<TestExecution.Test> tests= restClient.;
 
         for(TestExecution.Test t:tests)
         {

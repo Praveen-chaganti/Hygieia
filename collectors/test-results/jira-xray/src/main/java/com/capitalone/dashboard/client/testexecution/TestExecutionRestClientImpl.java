@@ -9,6 +9,8 @@ import com.atlassian.jira.rest.client.internal.async.AsynchronousSearchRestClien
 import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
 import com.atlassian.jira.rest.client.internal.json.JsonObjectParser;
 import com.atlassian.util.concurrent.Promise;
+import com.capitalone.dashboard.client.JiraXRayRestClientImpl;
+import com.capitalone.dashboard.client.JiraXRayRestClientSupplier;
 import com.google.common.base.Function;
 import com.capitalone.dashboard.client.api.domain.TestExecution;
 import com.capitalone.dashboard.client.core.PluginConstants;
@@ -26,6 +28,10 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
     private URI baseUri;
     private final  TestArrayJsonParser testsParser=new TestArrayJsonParser();
     private final static TestExecUpdateJsonGenerator execUpdateGenerator=new TestExecUpdateJsonGenerator();
+    private final JiraXRayRestClientSupplier restClientSupplier=new JiraXRayRestClientSupplier();
+    private JiraXRayRestClientImpl restClient = (JiraXRayRestClientImpl) restClientSupplier.get();
+    private TestExecution testExecution;
+
 
 
     private SearchRestClient searchRestClient=null;
@@ -48,6 +54,10 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
         return this.getAndParse(uriBuilder.build(testExecution.getKey()),this.testsParser);
     }
 
+    public Iterable<TestExecution.Test> printTests(){
+        Iterable<TestExecution.Test> test =  restClient.getTestExecutionClient().getTests(testExecution).claim();
+        return test;
+    }
 
     /**
      * Adds/Removes the test associated with this test execution
