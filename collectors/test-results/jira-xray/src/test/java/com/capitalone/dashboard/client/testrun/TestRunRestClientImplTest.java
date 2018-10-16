@@ -2,9 +2,7 @@ package com.capitalone.dashboard.client.testrun;
 
 import com.atlassian.jira.rest.client.api.SearchRestClient;
 import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
-import com.atlassian.util.concurrent.Promise;
 import com.capitalone.dashboard.client.api.domain.Defect;
-import com.capitalone.dashboard.client.api.domain.Evidence;
 import com.capitalone.dashboard.client.api.domain.TestExecution;
 import com.capitalone.dashboard.client.api.domain.TestRun;
 import org.codehaus.jettison.json.JSONObject;
@@ -148,14 +146,14 @@ public class TestRunRestClientImplTest {
         TestRun testRun = new TestRun(URI.create(""), "EME-1683", 507571L, TestRun.Status.PASS, null, null, "jqm884", "jqm884", null, null, null, null, null);
     }
     @Test
-    public void getTestRunsByTestExecKeyAndTestKey(){
+    public void getTestRunsByTestExecKeyAndTestKey() {
         TestRunRestClientImpl mock = Mockito.spy(new TestRunRestClientImpl(URI.create(""),httpClient));
         try {
             TestRun testruns = mock.getTestRun(TEST_EXEC_KEY, TEST_KEY).claim();
-            System.out.println("**********"+testruns.getAssignee());
-            Assert.assertEquals(testruns.getAssignee(), "jqm88");
-            Assert.assertEquals(testruns.getExecutedBy(), "jqm88");
-            Assert.assertEquals(testruns.getKey(), "EME-1683");
+             Mockito.when(mock.getTestRun(TEST_EXEC_KEY, TEST_KEY).claim()).thenReturn((TestRun) jsonObject.get("1977"));
+             Assert.assertEquals(testruns.getAssignee(), "jqm88");
+             Assert.assertEquals(testruns.getExecutedBy(), "jqm88");
+             Assert.assertEquals(testruns.getKey(), "EME-1683");
         }catch (Exception e){
 
         }
@@ -168,7 +166,9 @@ public class TestRunRestClientImplTest {
         TestRunRestClientImpl mock = Mockito.spy(new TestRunRestClientImpl(URI.create(""),httpClient));
         try {
             TestRun testruns = mock.getTestRun(TEST_ID).claim();
-
+            Mockito.when(mock.getTestRun(TEST_EXEC_KEY, TEST_KEY).claim()).thenReturn((TestRun) jsonObject.get("1977"));
+            Assert.assertEquals(testruns.getKey(), "EME-1683");
+            Assert.assertEquals(testruns.getExecutedBy(), "jqm884");
         }catch (Exception e){
 
         }

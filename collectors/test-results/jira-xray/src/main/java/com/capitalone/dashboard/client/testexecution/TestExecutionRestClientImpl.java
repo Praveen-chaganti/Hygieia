@@ -28,9 +28,6 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
     private URI baseUri;
     private final  TestArrayJsonParser testsParser=new TestArrayJsonParser();
     private final static TestExecUpdateJsonGenerator execUpdateGenerator=new TestExecUpdateJsonGenerator();
-    private final JiraXRayRestClientSupplier restClientSupplier=new JiraXRayRestClientSupplier();
-    private JiraXRayRestClientImpl restClient = (JiraXRayRestClientImpl) restClientSupplier.get();
-    private TestExecution testExecution;
 
 
 
@@ -54,10 +51,6 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
         return this.getAndParse(uriBuilder.build(testExecution.getKey()),this.testsParser);
     }
 
-    public Iterable<TestExecution.Test> printTests(){
-        Iterable<TestExecution.Test> test =  restClient.getTestExecutionClient().getTests(testExecution).claim();
-        return test;
-    }
 
     /**
      * Adds/Removes the test associated with this test execution
