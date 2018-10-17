@@ -33,9 +33,6 @@ public class TestExecutionRestClientImplTest {
     @Mock
     private DisposableHttpClient httpClient;
 
-
-
-
     @Before
     public final void init() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -45,9 +42,7 @@ public class TestExecutionRestClientImplTest {
     public void getTests() throws Exception{
         testExecution = new TestExecution(URI.create(""), "EME-4644", 1977l);
         TestExecution.Test test =  new TestExecution.Test(URI.create(""),"EA-3403",28775L,1,TestRun.Status.PASS);
-      //  AbstractAsynchronousRestClient mockAbstractClass = mock(AbstractAsynchronousRestClient.class);
         TestExecutionRestClientImpl mock = PowerMockito.spy(new TestExecutionRestClientImpl(URI.create(""),httpClient));
-        final  TestArrayJsonParser testsParser=new TestArrayJsonParser();
         Promise p =new Promise() {
             @Override
             public Object claim() {
@@ -121,7 +116,6 @@ public class TestExecutionRestClientImplTest {
         };
         PowerMockito.doReturn(p).when(mock,"getAndParse",Matchers.any(URI.class),Matchers.any(TestArrayJsonParser.class));
         Promise<Iterable<TestExecution.Test>> testResult= mock.getTests(testExecution);
-        System.out.println("***************"+testResult);
         Assert.assertNotNull(testResult);
         }
 
