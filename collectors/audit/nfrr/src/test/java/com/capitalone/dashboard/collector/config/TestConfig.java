@@ -21,7 +21,7 @@ public class TestConfig {
         // Test Config Settings
         AuditSettings settings = new AuditSettings();
         settings.setCron("*/2 * * * *");
-        settings.setServers(Arrays.asList("http://localhost:8081/"));
+        settings.setServers(Arrays.asList("http://localhost:8081"));
         return settings;
     }
 

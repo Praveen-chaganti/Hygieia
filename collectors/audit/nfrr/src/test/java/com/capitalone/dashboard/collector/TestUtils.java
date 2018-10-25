@@ -1,13 +1,15 @@
 package com.capitalone.dashboard.collector;
 
-import com.capitalone.dashboard.model.Collector;
-import com.capitalone.dashboard.model.CollectorItem;
-import com.capitalone.dashboard.model.Component;
 import com.capitalone.dashboard.model.Dashboard;
-import com.capitalone.dashboard.repository.CollectorItemRepository;
+import com.capitalone.dashboard.model.Collector;
+import com.capitalone.dashboard.model.Component;
+import com.capitalone.dashboard.model.CollectorItem;
+import com.capitalone.dashboard.model.Cmdb;
+import com.capitalone.dashboard.repository.DashboardRepository;
 import com.capitalone.dashboard.repository.CollectorRepository;
 import com.capitalone.dashboard.repository.ComponentRepository;
-import com.capitalone.dashboard.repository.DashboardRepository;
+import com.capitalone.dashboard.repository.CollectorItemRepository;
+import com.capitalone.dashboard.repository.CmdbRepository;
 import com.capitalone.dashboard.testutil.GsonUtil;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
@@ -47,6 +49,13 @@ public class TestUtils {
         List<CollectorItem> collectorItem = gson.fromJson(json, new TypeToken<List<CollectorItem>>() {
         }.getType());
         collectorItemRepository.save(collectorItem);
+    }
+    public static void loadCmdb(CmdbRepository cmdbRepository) throws IOException {
+        Gson gson = GsonUtil.getGson();
+        String json = IOUtils.toString(Resources.getResource("./cmdb/cmdb.json"));
+        List<Cmdb> cmdb = gson.fromJson(json, new TypeToken<List<Cmdb>>() {
+        }.getType());
+        cmdbRepository.save(cmdb);
     }
 
 }

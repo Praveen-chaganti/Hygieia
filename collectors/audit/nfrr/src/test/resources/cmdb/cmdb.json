@@ -1,0 +1,25 @@
+[
+  {
+  "_id" : "59288306dd735773e4e3be77",
+  "collectorItemId" : "5991ace042ff4e678e379add",
+  "timestamp" : 1525756519402,
+  "configurationItem" : "ASVHYGIEIA",
+  "configurationItemSubType" : "Application",
+  "configurationItemType" : "bizservice",
+  "assignmentGroup" : "PROCESS",
+  "appServiceOwner" : "Chris",
+  "businessOwner" : "Chris",
+  "supportOwner" : "Jas",
+  "developmentOwner" : "Broc",
+  "ownerDept" : "DIGITAL",
+  "commonName" : "ASVHYGIEIA",
+  "itemType" : "app",
+  "validConfigItem" : true,
+  "components" : [
+    ""
+  ],
+  "environments" : [
+    "ENVPHYGIEIA"
+  ]
+}
+]
