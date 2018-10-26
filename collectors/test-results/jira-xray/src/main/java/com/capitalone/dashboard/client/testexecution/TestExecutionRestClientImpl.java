@@ -76,7 +76,9 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
      */
     public int updateTestExecutionInformation() {
         int count = 0;
+        testResultSettings.setPageSize(5);
         int pageSize = testResultSettings.getPageSize();
+        System.out.println(pageSize);
 
 //        updateStatuses();
 
@@ -87,6 +89,7 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
             }
             long queryStart = System.currentTimeMillis();
             List<Feature> tests = featureRepository.getStoryByType("Test Execution");
+            System.out.println(tests);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Story information query took " + (System.currentTimeMillis() - queryStart) + " ms");
             }
@@ -129,8 +132,8 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
 
         if (currentPagedTestExecutions != null) {
             List<TestResult> testResultsToSave = new ArrayList<>();
-            ObjectId jiraXRayFeatureId = testResultCollectorRepository.findByName(FeatureCollectorConstants.JIRA_XRAY).getId();
-
+           // ObjectId jiraXRayFeatureId = testResultCollectorRepository.findByName(FeatureCollectorConstants.JIRA_XRAY).getId();
+            ObjectId jiraXRayFeatureId = new ObjectId("abcdef0123456789abcdef01");
             for (Feature testExec : currentPagedTestExecutions) {
 
                 TestResult testResult = new TestResult();
@@ -140,10 +143,13 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
                 testResult.setTargetAppName(testExec.getsProjectName());
                 testResult.setType(TestSuiteType.Manual);
                 try {
-                    TestExecution testExecution = new TestExecution(new URI(""), testExec.getsNumber(), Long.parseLong(testExec.getsId()));
+                   // TestExecution testExecution = new TestExecution(new URI(""), testExec.getsNumber(), Long.parseLong(testExec.getsId()));
+                    TestExecution testExecution = new TestExecution(URI.create(""), "EME-4644", 1977l);
+                    TestExecution.Test test =  new TestExecution.Test(URI.create(""),"EA-3403",28775L,1,TestRun.Status.PASS);
                     testResult.setUrl(testExecution.getSelf().toString());
 
                     Iterable<TestExecution.Test> tests = this.getTests(testExecution).claim();
+
                     int totalCount = (int) tests.spliterator().getExactSizeIfKnown();
                     int failCount = this.getTestCount(tests, "FAIL");
                     int passCount = this.getTestCount(tests, "PASS");
@@ -163,7 +169,7 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
                     }
 
                     testResult.setTestCapabilities(this.getCapabilities(tests, testExec));
-                } catch (URISyntaxException u) {
+                } catch (Exception e) {
                     LOGGER.error("URI Syntax Invalid");
                 }
                 testResultsToSave.add(testResult);
