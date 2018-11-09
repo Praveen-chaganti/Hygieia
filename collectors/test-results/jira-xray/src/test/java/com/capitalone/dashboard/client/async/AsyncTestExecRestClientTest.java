@@ -16,10 +16,10 @@ import static org.junit.Assert.assertNotNull;
  */
 public class AsyncTestExecRestClientTest {
 
-    private final String uriLocation="https://jira.kdc.capitalone.com";
-    private final String username="CWC338";
-    private final String password= "Developer=123";
-    private final String TEST_EXEC_KEY="EA-21658";
+    private final String uriLocation="";
+    private final String username="";
+    private final String password= "";
+    private final String TEST_EXEC_KEY="EA-";
     private final String TEST_KEY="PBT-2";
     private final long TEST_ID=1977;
 

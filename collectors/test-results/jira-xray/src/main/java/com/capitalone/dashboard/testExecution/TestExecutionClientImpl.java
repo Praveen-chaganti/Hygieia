@@ -17,8 +17,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class TestExecutionClientImpl implements TestExecutionClient {
@@ -29,8 +33,8 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     private final FeatureRepository featureRepository;
     private AsyncXrayJiraRestClient restClient;
     private final XrayRestAsyncRestClientFactory factory=new XrayRestAsyncRestClientFactory();
-    private final String uriLocation="https://jira.kdc.capitalone.com";
-    private final String username="CWC338";
+    private final String uriLocation="";
+    private final String username="";
     private final String password= "";
 
     public TestExecutionClientImpl(TestResultRepository testResultRepository, TestResultCollectorRepository testResultCollectorRepository, FeatureRepository featureRepository) {
@@ -85,8 +89,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
      */
     @SuppressWarnings({ "PMD.AvoidDeeplyNestedIfStmts", "PMD.NPathComplexity" })
     private void updateMongoInfo(List<Feature> currentPagedTestExecutions) {
-//        final TestResultSettings testResultSettings = new TestResultSettings();
-        DisposableHttpClient httpClient;
+
 
         LOGGER.info("\n IN updateMongoInfo Method");
         LOGGER.info("\n TEST Execution SIZE: " + currentPagedTestExecutions.size());
@@ -122,26 +125,57 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     int totalCount = (int) tests.spliterator().getExactSizeIfKnown();
                     LOGGER.info("\n TOTAL TESTS: " + totalCount);
 
+                   Map<String,Integer> failandpasscount = this.getFailAndPassTestCount(testExec, tests);
+                   int failCount = failandpasscount.get("FAIL_COUNT");
+                   int passCount = failandpasscount.get("PASS_COUNT");
 
-                    int failCount = this.getFailTestCount(testExec, tests);
-                    int passCount = this.getPassTestCount(testExec, tests);
-                    testResult.setTotalCount(totalCount);
-                    testResult.setFailureCount(failCount);
-                    testResult.setSuccessCount(passCount);
+                   System.out.println("======="+failCount);
+                   System.out.println("====="+passCount);
 
-                    int skipCount = totalCount - (failCount + passCount);
-                    testResult.setSkippedCount(skipCount);
 
-                    if(failCount > 0) {
-                        testResult.setResultStatus(TestCaseStatus.Failure.toString());
-                    } else if (totalCount == passCount){
-                        testResult.setResultStatus(TestCaseStatus.Success.toString());
-                    } else {
-                        testResult.setResultStatus(TestCaseStatus.Skipped.toString());
-                    }
+                   List<TestCapability> capabilities = new ArrayList<>();
+                   TestCapability capability = new TestCapability();
+                   capability.setDescription(testExec.getsName());
+                   capability.setTotalTestSuiteCount(1);
+                   capability.setType(TestSuiteType.Manual);
+                   List<TestSuite> testSuites = new ArrayList<>();
+                   TestSuite testSuite = new TestSuite();
 
-                    testResult.setTestCapabilities(this.getCapabilities(tests, testExec));
-                } catch (URISyntaxException u) {
+                   testSuite.setDescription(testExec.getsName());
+                   testSuite.setType(TestSuiteType.Manual);
+
+                   testSuite.setTotalTestCaseCount(totalCount);
+                   testSuite.setFailedTestCaseCount(failCount);
+                   testSuite.setSuccessTestCaseCount(passCount);
+
+                   int skipCount = totalCount - (failCount + passCount);
+                   testSuite.setSkippedTestCaseCount(skipCount);
+
+                   if(failCount > 0) {
+                       capability.setStatus(TestCaseStatus.Failure);
+                       testResult.setResultStatus("Failure");
+                       testSuite.setStatus(TestCaseStatus.Failure);
+                       testResult.setFailureCount(1);
+                       capability.setFailedTestSuiteCount(1);
+                   } else if (totalCount == passCount){
+                       capability.setStatus(TestCaseStatus.Success);
+                       testResult.setResultStatus("Success");
+                       testSuite.setStatus(TestCaseStatus.Success);
+                       testResult.setSuccessCount(1);
+                       capability.setSuccessTestSuiteCount(1);
+                   } else {
+                       capability.setStatus(TestCaseStatus.Skipped);
+                       testResult.setResultStatus("Skipped");
+                       testSuite.setStatus(TestCaseStatus.Skipped);
+                       testResult.setSkippedCount(1);
+                       capability.setSkippedTestSuiteCount(1);
+                   }
+                   testSuite.setTestCases(this.getTestCases(tests,testExec));
+                   testSuites.add(testSuite);
+                   capability.setTestSuites(testSuites);
+                   capabilities.add(capability);
+                   testResult.setTestCapabilities(capabilities);
+               } catch (URISyntaxException u) {
                     LOGGER.error("URI Syntax Invalid");
                }
                 testResultsToSave.add(testResult);
@@ -151,66 +185,6 @@ public class TestExecutionClientImpl implements TestExecutionClient {
             testResultRepository.save(testResultsToSave);
         }
     }
-    private List<TestCapability> getCapabilities(Iterable<TestExecution.Test> tests, Feature testExec) {
-        List<TestCapability> capabilities = new ArrayList<>();
-        TestCapability capability = new TestCapability();
-        capability.setDescription(testExec.getsName());
-
-        int totalCount = (int) tests.spliterator().getExactSizeIfKnown();
-        int failCount = this.getFailTestCount(testExec, tests);
-        int passCount = this.getPassTestCount(testExec, tests);
-        capability.setTotalTestSuiteCount(1);
-        capability.setType(TestSuiteType.Manual);
-
-        if(failCount > 0) {
-            capability.setStatus(TestCaseStatus.Failure);
-            capability.setFailedTestSuiteCount(1);
-        } else if (totalCount == passCount){
-            capability.setStatus(TestCaseStatus.Success);
-            capability.setSuccessTestSuiteCount(1);
-        } else {
-            capability.setStatus(TestCaseStatus.Skipped);
-            capability.setSkippedTestSuiteCount(1);
-        }
-        capability.setTestSuites(this.getTestSuites(tests, testExec));
-        capabilities.add(capability);
-
-        return capabilities;
-    }
-
-    private List<TestSuite> getTestSuites(Iterable<TestExecution.Test> tests, Feature testExec) {
-
-        List<TestSuite> testSuites = new ArrayList<>();
-        TestSuite testSuite = new TestSuite();
-
-        testSuite.setDescription(testExec.getsName());
-        testSuite.setType(TestSuiteType.Manual);
-        int totalCount = (int) tests.spliterator().getExactSizeIfKnown();
-        int failCount = this.getFailTestCount(testExec, tests);
-        int passCount = this.getPassTestCount(testExec,tests);
-        testSuite.setTotalTestCaseCount(totalCount);
-        testSuite.setFailedTestCaseCount(failCount);
-        testSuite.setSuccessTestCaseCount(passCount);
-
-        int skipCount = totalCount - (failCount + passCount);
-        testSuite.setSkippedTestCaseCount(skipCount);
-
-        if(failCount > 0) {
-            testSuite.setStatus(TestCaseStatus.Failure);
-        } else if (totalCount == passCount){
-            testSuite.setStatus(TestCaseStatus.Success);
-        } else {
-            testSuite.setStatus(TestCaseStatus.Skipped);
-        }
-        List<TestCase> testCases = new ArrayList<>();
-        TestCase testCase = new TestCase();
-
-        testSuite.setTestCases(this.getTestCases(tests,testExec));
-        testSuites.add(testSuite);
-
-        return testSuites;
-    }
-
     private List<TestCase> getTestCases(Iterable<TestExecution.Test> tests, Feature testExec) {
         List<TestCase> testCases = new ArrayList<>();
 
@@ -224,19 +198,24 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                 testCase.setId(testRun.getId().toString());
                 testCase.setDescription(test.toString());
                 int totalSteps = (int) testRun.getSteps().spliterator().getExactSizeIfKnown();
-                int failSteps = this.getStepCount(testRun, "FAIL");
-                int passSteps = this.getStepCount(testRun, "PASS");
-                int skipSteps = totalSteps - (failSteps + passSteps);
+                Map<String,Integer> failandpassSteps = this.getFailAndPassStepCount(testRun);
+                int failSteps = failandpassSteps.get("FAILSTEP_COUNT");
+                int passSteps = failandpassSteps.get("PASSSTEP_COUNT");
+                int skipSteps = failandpassSteps.get("SKIPSTEP_COUNT");
+                int unknownSteps = failandpassSteps.get("UNKNOWNSTEP_COUNT");
                 testCase.setTotalTestStepCount(totalSteps);
                 testCase.setFailedTestStepCount(failSteps);
                 testCase.setSuccessTestStepCount(passSteps);
                 testCase.setSkippedTestStepCount(skipSteps);
+                testCase.setUnknownStatusCount(unknownSteps);
                 if(failSteps > 0) {
                     testCase.setStatus(TestCaseStatus.Failure);
-                } else if (totalSteps == passSteps){
+                } else if (skipSteps > 0){
+                    testCase.setStatus(TestCaseStatus.Skipped);
+                } else if(passSteps > 0){
                     testCase.setStatus(TestCaseStatus.Success);
                 } else {
-                    testCase.setStatus(TestCaseStatus.Skipped);
+                    testCase.setStatus(TestCaseStatus.Unknown);
                 }
 
                 testCase.setTestSteps(this.getTestSteps(testRun));
@@ -251,6 +230,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
     private List<TestCaseStep> getTestSteps(TestRun testRun) {
+
         List<TestCaseStep> testSteps = new ArrayList<>();
 
         for (TestStep testStep : testRun.getSteps()) {
@@ -258,9 +238,9 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
             testCaseStep.setId(testStep.getId().toString());
             testCaseStep.setDescription(testStep.getStep().getRaw());
-            if (testStep.getStatus().equals("PASS")) {
+            if (testStep.getStatus().toString().equals("PASS")) {
                 testCaseStep.setStatus(TestCaseStatus.Success);
-            } else if (testStep.getStatus().equals("FAIL")) {
+            } else if (testStep.getStatus().toString().equals("FAIL")) {
                 testCaseStep.setStatus(TestCaseStatus.Failure);
             } else {
                 testCaseStep.setStatus(TestCaseStatus.Skipped);
@@ -273,57 +253,61 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         return testSteps;
     }
 
-    private int getFailTestCount(Feature testExec ,Iterable<TestExecution.Test> tests) {
-        int count = 0;
+
+    private Map<String,Integer> getFailAndPassTestCount(Feature testExec ,Iterable<TestExecution.Test> tests) {
+
+        Map<String,Integer> map = new HashMap<String,Integer>(4);
+        int failCount = 0;
+        int passCount = 0;
+        int skipCount = 0;
+        int unknownCount = 0;
 
         for (TestExecution.Test test : tests) {
             try {
                 TestRun testRun = restClient.getTestRunClient().getTestRun(testExec.getsNumber(), test.getKey()).claim();
                 if (testRun.getStatus().toString().equals("FAIL")) {
-                    count++;
+                    failCount++;
                     //System.out.println("*****************Failcount"+count);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        return count;
-    }
-
-    private int getPassTestCount(Feature testExec ,Iterable<TestExecution.Test> tests) {
-        int count = 0;
-
-        for (TestExecution.Test test : tests) {
-            try {
-                TestRun testRun = restClient.getTestRunClient().getTestRun(testExec.getsNumber(), test.getKey()).claim();
-               // System.out.println("*****************"+testRun.getStatus());
-
-                if (testRun.getStatus().toString().equals("PASS")) {
-                    count++;
+                }else if (testRun.getStatus().toString().equals("PASS")) {
+                    passCount++;
                     //System.out.println("*****************passCount"+count);
+                }else if (testRun.getStatus().toString().equals("SKIP")){
+                    skipCount++;
+                }else{
+                    unknownCount++;
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
-        return count;
+        map.put("FAIL_COUNT",failCount);
+        map.put("PASS_COUNT",passCount);
+        map.put("SKIP_COUNT",skipCount);
+        map.put("UNKNOWN_COUNT",unknownCount);
+        return map;
     }
-
-    private int getStepCount(TestRun testRun, String statusType) {
-        int count = 0;
-
+    private Map<String,Integer> getFailAndPassStepCount(TestRun testRun) {
+        Map<String,Integer> map = new HashMap<>(4);
+        int failStepCount = 0, passStepCount = 0, skipStepCount = 0, unknownStepCount = 0;
+        long start = System.currentTimeMillis();
         for (TestStep testStep : testRun.getSteps()) {
-            System.out.println("%%%%%%%%%%%%%%%%%%%%%%%%%"+testStep.getStatus());
-            if ("FAIL".equalsIgnoreCase(statusType) && testStep.getStatus().toString().equals("FAIL")) {
-                count++;
-            } else if ("PASS".equalsIgnoreCase(statusType) && testStep.getStatus().toString().equals("PASS")) {
-                count++;
+
+            if (testStep.getStatus().toString().equals("PASS")) {
+                passStepCount++;
+            } else if (testStep.getStatus().toString().equals("FAIL")) {
+                failStepCount++;
+            } else if (testStep.getStatus().equals("SKIP")){
+                skipStepCount++;
+            } else{
+                unknownStepCount++;
             }
         }
+        map.put("FAILSTEP_COUNT",failStepCount);
+        map.put("PASSSTEP_COUNT",passStepCount);
+        map.put("SKIPSTEP_COUNT",skipStepCount);
+        map.put("UNKNOWNSTEP_COUNT",unknownStepCount);
 
-        return count;
+        return map;
     }
 
     /**
