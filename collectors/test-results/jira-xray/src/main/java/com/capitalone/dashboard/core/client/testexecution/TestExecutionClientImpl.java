@@ -50,6 +50,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
             }
             long queryStart = System.currentTimeMillis();
             List<Feature> testExecutions = featureRepository.getStoryByType("Test Execution");
+            LOGGER.info("size"+testExecutions.size());
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Story information query took " + (System.currentTimeMillis() - queryStart) + " ms");
             }
@@ -86,7 +87,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
      */
     @SuppressWarnings({ "PMD.AvoidDeeplyNestedIfStmts", "PMD.NPathComplexity" })
     private void updateMongoInfo(List<Feature> currentPagedTestExecutions) {
-
+        LOGGER.info("Enteerd in to method");
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Size of paged Jira response: " + (currentPagedTestExecutions == null? 0 : currentPagedTestExecutions.size()));
         }
@@ -171,6 +172,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
     private List<TestCase> getTestCases(Iterable<TestExecution.Test> tests, Feature testExec) {
+        LOGGER.info("Enterd in to get steps");
         List<TestCase> testCases = new ArrayList<>();
 
         for (TestExecution.Test test : tests) {
@@ -216,7 +218,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
     private List<TestCaseStep> getTestSteps(TestRun testRun) {
-
+        LOGGER.info("Enterd in to gettestSteps");
         List<TestCaseStep> testSteps = new ArrayList<>();
 
         for (TestStep testStep : testRun.getSteps()) {
