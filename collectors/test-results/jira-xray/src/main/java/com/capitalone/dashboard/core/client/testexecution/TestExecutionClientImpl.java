@@ -1,6 +1,7 @@
 package com.capitalone.dashboard.core.client.testexecution;
 
 import com.capitalone.dashboard.TestResultSettings;
+import com.capitalone.dashboard.api.JiraXRayRestClient;
 import com.capitalone.dashboard.api.domain.TestExecution;
 import com.capitalone.dashboard.api.domain.TestRun;
 import com.capitalone.dashboard.api.domain.TestStep;
@@ -39,7 +40,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     private final TestResultCollectorRepository testResultCollectorRepository;
     private final FeatureRepository featureRepository;
     private final CollectorItemRepository collectorItemRepository;
-    private JiraXRayRestClientImpl restClient;
+    private JiraXRayRestClient restClient;
     private final JiraXRayRestClientSupplier restClientSupplier;
 
     public TestExecutionClientImpl(TestResultRepository testResultRepository, TestResultCollectorRepository testResultCollectorRepository,
@@ -51,6 +52,8 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         this.testResultSettings = testResultSettings;
         this.restClientSupplier = restClientSupplier;
         this.collectorItemRepository = collectorItemRepository;
+        this.restClient = (JiraXRayRestClient) restClientSupplier.get();
+        //restClient= (JiraXRayRestClientImpl) restClientSupplier.get();
     }
 
 
@@ -84,6 +87,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                 break;
             }
         }
+        LOGGER.info("Enter first cycle");
 
         return count;
     }
@@ -107,18 +111,18 @@ public class TestExecutionClientImpl implements TestExecutionClient {
             for (Feature testExec : currentPagedTestExecutions) {
 
                 // Set collectoritemid for manual test results
-                if (testExec.getsTeamID() != null) {
+               /* if (testExec.getsTeamID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraTeamId(testExec.getsTeamID()).getId();
                 } else if (testExec.getsProjectID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraProjectId(testExec.getsProjectID()).getId();
                 } else {
                     CollectorItem collectorItem = new CollectorItem();
                     collectorItemId = collectorItem.getId();
-                }
+                }*/
 
                 TestResult testResult = new TestResult();
 
-                testResult.setCollectorItemId(collectorItemId);
+                //testResult.setCollectorItemId(collectorItemId);
                 testResult.setDescription(testExec.getsName());
 
                 testResult.setTargetAppName(testExec.getsProjectName());
@@ -127,8 +131,9 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     TestExecution testExecution = new TestExecution(new URI(testExec.getsUrl()), testExec.getsNumber(), Long.parseLong(testExec.getsId()));
                     testResult.setUrl(testExecution.getSelf().toString());
 
-                    restClient= (JiraXRayRestClientImpl) restClientSupplier.get();
-                    Iterable<TestExecution.Test> tests = restClient.getTestExecutionClient().getTests(testExecution).claim();
+                    //restClient= (JiraXRayRestClientImpl) restClientSupplier.get();
+
+                   Iterable<TestExecution.Test> tests = this.restClient.getTestExecutionClient().getTests(testExecution).claim();
 
                     if (tests != null) {
                         int totalCount = (int) tests.spliterator().getExactSizeIfKnown();
@@ -204,7 +209,6 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
                 testCase.setId(testRun.getId().toString());
                 testCase.setDescription(test.toString());
-                if (testRun.getSteps() != null) {
                     int totalSteps = (int) testRun.getSteps().spliterator().getExactSizeIfKnown();
                     Map<String,Integer> stepCountByStatus = this.getStepCountStatusMap(testRun);
 
@@ -228,10 +232,9 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     }
 
                     testCase.setTestSteps(this.getTestSteps(testRun));
-                }
-
             } catch (Exception e) {
                 LOGGER.error("Unable to get the Test Step: " + e);
+                e.printStackTrace();
             }
             testCases.add(testCase);
         }
