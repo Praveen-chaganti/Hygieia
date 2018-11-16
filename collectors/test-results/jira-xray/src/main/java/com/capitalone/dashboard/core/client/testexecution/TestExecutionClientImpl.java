@@ -15,10 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TestExecutionClientImpl implements TestExecutionClient {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TestExecutionClientImpl.class);
@@ -44,32 +41,31 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         int pageSize = testResultSettings.getPageSize();
 
         boolean hasMore = true;
-        for (int i = 0; hasMore; i += pageSize) {
+        List<Feature> testExecutions = featureRepository.getStoryByType("Test Execution");
+        List<Feature> manualTestExecutions = this.getManualTestExecutions(testExecutions);
+
+        for (int i = 0; hasMore; i += 1) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Obtaining story information starting at index " + i + "...");
             }
             long queryStart = System.currentTimeMillis();
-            List<Feature> testExecutions = featureRepository.getStoryByType("Test Execution");
-            LOGGER.info("size"+testExecutions.size());
+
+            List<Feature> pagedTestExecutions = this.getTestExecutions(manualTestExecutions, i, pageSize);
+
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Story information query took " + (System.currentTimeMillis() - queryStart) + " ms");
             }
 
-            if (testExecutions != null && !testExecutions.isEmpty()) {
-                updateMongoInfo(testExecutions);
-                count += testExecutions.size();
+            if (manualTestExecutions != null && !manualTestExecutions.isEmpty()) {
+                updateMongoInfo(pagedTestExecutions);
+                count += pagedTestExecutions.size();
             }
 
-            LOGGER.info("Loop i " + i + " pageSize " + testExecutions.size());
-
-            LOGGER.info("Test Execution SIZE: " + testExecutions.size());
-            LOGGER.info("Page Size: " + pageSize);
-
+            LOGGER.info("Loop i " + i + " pageSize " + pagedTestExecutions.size());
 
             // will result in an extra call if number of results == pageSize
             // but I would rather do that then complicate the jira client implementation
-            if (testExecutions == null || testExecutions.size() < pageSize) {
-                LOGGER.info("INSIDE IF");
+            if (pagedTestExecutions == null || pagedTestExecutions.size() < pageSize) {
                 hasMore = false;
                 break;
             }
@@ -184,31 +180,33 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
                 testCase.setId(testRun.getId().toString());
                 testCase.setDescription(test.toString());
-                int totalSteps = (int) testRun.getSteps().spliterator().getExactSizeIfKnown();
-                Map<String,Integer> stepCountByStatus = this.getStepCountStatusMap(testRun);
+                if (testRun.getSteps() != null) {
+                    int totalSteps = (int) testRun.getSteps().spliterator().getExactSizeIfKnown();
+                    Map<String, Integer> stepCountByStatus = this.getStepCountStatusMap(testRun);
 
-                int failSteps = stepCountByStatus.get("FAILSTEP_COUNT");
-                int passSteps = stepCountByStatus.get("PASSSTEP_COUNT");
-                int skipSteps = stepCountByStatus.get("SKIPSTEP_COUNT");
-                int unknownSteps = stepCountByStatus.get("UNKNOWNSTEP_COUNT");
-                testCase.setTotalTestStepCount(totalSteps);
-                testCase.setFailedTestStepCount(failSteps);
-                testCase.setSuccessTestStepCount(passSteps);
-                testCase.setSkippedTestStepCount(skipSteps);
-                testCase.setUnknownStatusCount(unknownSteps);
-                if(failSteps > 0) {
-                    testCase.setStatus(TestCaseStatus.Failure);
-                } else if (skipSteps > 0){
-                    testCase.setStatus(TestCaseStatus.Skipped);
-                } else if(passSteps > 0){
-                    testCase.setStatus(TestCaseStatus.Success);
-                } else {
-                    testCase.setStatus(TestCaseStatus.Unknown);
+                    int failSteps = stepCountByStatus.get("FAILSTEP_COUNT");
+                    int passSteps = stepCountByStatus.get("PASSSTEP_COUNT");
+                    int skipSteps = stepCountByStatus.get("SKIPSTEP_COUNT");
+                    int unknownSteps = stepCountByStatus.get("UNKNOWNSTEP_COUNT");
+                    testCase.setTotalTestStepCount(totalSteps);
+                    testCase.setFailedTestStepCount(failSteps);
+                    testCase.setSuccessTestStepCount(passSteps);
+                    testCase.setSkippedTestStepCount(skipSteps);
+                    testCase.setUnknownStatusCount(unknownSteps);
+                    if (failSteps > 0) {
+                        testCase.setStatus(TestCaseStatus.Failure);
+                    } else if (skipSteps > 0) {
+                        testCase.setStatus(TestCaseStatus.Skipped);
+                    } else if (passSteps > 0) {
+                        testCase.setStatus(TestCaseStatus.Success);
+                    } else {
+                        testCase.setStatus(TestCaseStatus.Unknown);
+                    }
+
+                    testCase.setTestSteps(this.getTestSteps(testRun));
+
                 }
-
-                testCase.setTestSteps(this.getTestSteps(testRun));
-
-            } catch (Exception e) {
+            }catch(Exception e){
 
             }
             testCases.add(testCase);
@@ -295,6 +293,46 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
         return map;
     }
+
+    /**
+     * Gets test executions with pagination
+     *
+     * @param sourceList
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    public List<Feature> getTestExecutions(List<Feature> sourceList, int page, int pageSize) {
+        if(pageSize <= 0 || page < 0) {
+            throw new IllegalArgumentException("invalid page size: " + pageSize);
+        }
+
+        int fromIndex = page * pageSize;
+        if(sourceList == null || sourceList.size() < fromIndex){
+            return Collections.emptyList();
+        }
+
+        return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
+    }
+
+    /**
+     * Filters all the manual test executions
+     *
+     * @param testExecutions
+     * @return
+     */
+    public List<Feature> getManualTestExecutions(List<Feature> testExecutions) {
+        List<Feature> manualTestExecutions = new ArrayList<>();
+        String[] automationKeywords = {"automated", "automation"};
+
+        for (Feature testExecution : testExecutions) {
+            if (!Arrays.stream(automationKeywords).parallel().anyMatch(testExecution.getsName().toLowerCase()::contains)) {
+                manualTestExecutions.add(testExecution);
+            }
+        }
+        return manualTestExecutions;
+    }
+
 
     /**
      * Retrieves the maximum change date for a given query.
