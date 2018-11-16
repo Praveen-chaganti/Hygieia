@@ -47,23 +47,6 @@ public class TestExecutionRestClientImpl extends AbstractAsynchronousRestClient 
     public Promise<Void> setTests(TestExecution testExec) {
         return null;
     }
-
-
-    /**
-     * Adds/Removes the test associated with this test execution
-     * @param testExec
-     * @return
-     */
-   /* public Promise<Void> setTests(TestExecution testExec) {
-        UriBuilder uriBuilder=UriBuilder.fromUri(baseUri);
-        uriBuilder.path("testexec").path("{isssue-key}").path("test");
-        return this.postAndParse(uriBuilder.build(testExec.getKey()), testExec, execUpdateGenerator, new JsonObjectParser<Void>() {
-            public Void parse(JSONObject jsonObject) throws JSONException {
-                return null;
-            }
-        });
-    }*/
-
     /**
      * Removes a test from the test execution identified by his test key
      * @param testExecKey

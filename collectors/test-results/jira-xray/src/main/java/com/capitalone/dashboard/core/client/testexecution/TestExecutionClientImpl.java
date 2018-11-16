@@ -1,7 +1,6 @@
 package com.capitalone.dashboard.core.client.testexecution;
 
 import com.capitalone.dashboard.TestResultSettings;
-import com.capitalone.dashboard.api.JiraXRayRestClient;
 import com.capitalone.dashboard.api.domain.TestExecution;
 import com.capitalone.dashboard.api.domain.TestRun;
 import com.capitalone.dashboard.api.domain.TestStep;
@@ -26,12 +25,12 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Collections;
-
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
 
 public class TestExecutionClientImpl implements TestExecutionClient {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TestExecutionClientImpl.class);
@@ -40,7 +39,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     private final TestResultCollectorRepository testResultCollectorRepository;
     private final FeatureRepository featureRepository;
     private final CollectorItemRepository collectorItemRepository;
-    private JiraXRayRestClient restClient;
+    private JiraXRayRestClientImpl restClient;
     private final JiraXRayRestClientSupplier restClientSupplier;
 
     public TestExecutionClientImpl(TestResultRepository testResultRepository, TestResultCollectorRepository testResultCollectorRepository,
@@ -52,43 +51,47 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         this.testResultSettings = testResultSettings;
         this.restClientSupplier = restClientSupplier;
         this.collectorItemRepository = collectorItemRepository;
-        this.restClient = (JiraXRayRestClient) restClientSupplier.get();
-        //restClient= (JiraXRayRestClientImpl) restClientSupplier.get();
     }
 
-
+    /**
+     * Updates the test result information in MongoDB with Pagination. pageSize is defined in properties
+     *
+     * @return
+     */
     public int updateTestResultInformation() {
         int count = 0;
         int pageSize = testResultSettings.getPageSize();
 
         boolean hasMore = true;
-        for (int i = 0; hasMore; i += pageSize) {
+        List<Feature> testExecutions = featureRepository.getStoryByType("Test Execution");
+        List<Feature> manualTestExecutions = this.getManualTestExecutions(testExecutions);
+
+        for (int i = 0; hasMore; i += 1) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Obtaining story information starting at index " + i + "...");
             }
             long queryStart = System.currentTimeMillis();
-            List<Feature> testExecutions = this.getTestExecutions(featureRepository.getStoryByType("Test Execution"), i, pageSize);
+            List<Feature> pagedTestExecutions = this.getTestExecutions(manualTestExecutions, i, pageSize);
 
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("Story information query took " + (System.currentTimeMillis() - queryStart) + " ms");
             }
 
-            if (testExecutions != null && !testExecutions.isEmpty()) {
-                updateMongoInfo(testExecutions);
-                count += testExecutions.size();
+
+            if (manualTestExecutions != null && !manualTestExecutions.isEmpty()) {
+                updateMongoInfo(pagedTestExecutions);
+                count += pagedTestExecutions.size();
             }
 
-            LOGGER.info("Loop i " + i + " pageSize " + testExecutions.size());
+            LOGGER.info("Loop i " + i + " pageSize " + pagedTestExecutions.size());
 
             // will result in an extra call if number of results == pageSize
             // but I would rather do that then complicate the jira client implementation
-            if (testExecutions == null || testExecutions.size() < pageSize) {
+            if (pagedTestExecutions == null || pagedTestExecutions.size() < pageSize) {
                 hasMore = false;
                 break;
             }
         }
-        LOGGER.info("Enter first cycle");
-
         return count;
     }
 
@@ -111,18 +114,18 @@ public class TestExecutionClientImpl implements TestExecutionClient {
             for (Feature testExec : currentPagedTestExecutions) {
 
                 // Set collectoritemid for manual test results
-               /* if (testExec.getsTeamID() != null) {
+
+                if (testExec.getsTeamID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraTeamId(testExec.getsTeamID()).getId();
                 } else if (testExec.getsProjectID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraProjectId(testExec.getsProjectID()).getId();
                 } else {
                     CollectorItem collectorItem = new CollectorItem();
                     collectorItemId = collectorItem.getId();
-                }*/
+                }
 
                 TestResult testResult = new TestResult();
-
-                //testResult.setCollectorItemId(collectorItemId);
+                testResult.setCollectorItemId(collectorItemId);
                 testResult.setDescription(testExec.getsName());
 
                 testResult.setTargetAppName(testExec.getsProjectName());
@@ -131,9 +134,9 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     TestExecution testExecution = new TestExecution(new URI(testExec.getsUrl()), testExec.getsNumber(), Long.parseLong(testExec.getsId()));
                     testResult.setUrl(testExecution.getSelf().toString());
 
-                    //restClient= (JiraXRayRestClientImpl) restClientSupplier.get();
 
-                   Iterable<TestExecution.Test> tests = this.restClient.getTestExecutionClient().getTests(testExecution).claim();
+                    restClient = (JiraXRayRestClientImpl) restClientSupplier.get();
+                    Iterable<TestExecution.Test> tests = restClient.getTestExecutionClient().getTests(testExecution).claim();
 
                     if (tests != null) {
                         int totalCount = (int) tests.spliterator().getExactSizeIfKnown();
@@ -198,6 +201,14 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         }
     }
 
+
+    /**
+     * Get the test cases for a test suite
+     *
+     * @param tests
+     * @param testExec
+     * @return
+     */
     private List<TestCase> getTestCases(Iterable<TestExecution.Test> tests, Feature testExec) {
         List<TestCase> testCases = new ArrayList<>();
 
@@ -209,6 +220,8 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
                 testCase.setId(testRun.getId().toString());
                 testCase.setDescription(test.toString());
+
+                if (testRun.getSteps() != null) {
                     int totalSteps = (int) testRun.getSteps().spliterator().getExactSizeIfKnown();
                     Map<String,Integer> stepCountByStatus = this.getStepCountStatusMap(testRun);
 
@@ -232,15 +245,23 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     }
 
                     testCase.setTestSteps(this.getTestSteps(testRun));
+                }
+
             } catch (Exception e) {
                 LOGGER.error("Unable to get the Test Step: " + e);
-                e.printStackTrace();
             }
             testCases.add(testCase);
         }
 
         return testCases;
     }
+
+    /**
+     * Gets the test steps for a test case
+     *
+     * @param testRun
+     * @return
+     */
 
     private List<TestCaseStep> getTestSteps(TestRun testRun) {
 
@@ -264,6 +285,15 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         return testSteps;
     }
 
+
+
+    /**
+     * Gets the test cases count map based on the status {pass, fail, skip & unknown}
+     *
+     * @param testExec
+     * @param tests
+     * @return
+     */
 
     private Map<String,Integer> getTestCountStatusMap(Feature testExec, Iterable<TestExecution.Test> tests) {
 
@@ -299,20 +329,26 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
 
+    /**
+     * Gets the test step count map based on the status
+     *
+     * @param testRun
+     * @return
+     */
     private Map<String,Integer> getStepCountStatusMap(TestRun testRun) {
         Map<String,Integer> map = new HashMap<>(4);
         int failStepCount = 0, passStepCount = 0, skipStepCount = 0, unknownStepCount = 0;
-//        long start = System.currentTimeMillis();
         for (TestStep testStep : testRun.getSteps()) {
-
-            if (testStep.getStatus().toString().equals("PASS")) {
-                passStepCount++;
-            } else if (testStep.getStatus().toString().equals("FAIL")) {
-                failStepCount++;
-            } else if (testStep.getStatus().equals("SKIP")){
-                skipStepCount++;
-            } else{
-                unknownStepCount++;
+            if (testRun != null) {
+                if (testStep.getStatus().toString().equals("PASS")) {
+                    passStepCount++;
+                } else if (testStep.getStatus().toString().equals("FAIL")) {
+                    failStepCount++;
+                } else if (testStep.getStatus().equals("SKIP")){
+                    skipStepCount++;
+                } else{
+                    unknownStepCount++;
+                }
             }
         }
         map.put("FAILSTEP_COUNT", failStepCount);
@@ -323,6 +359,15 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         return map;
     }
 
+
+    /**
+     * Gets test executions with pagination
+     *
+     * @param sourceList
+     * @param page
+     * @param pageSize
+     * @return
+     */
     public List<Feature> getTestExecutions(List<Feature> sourceList, int page, int pageSize) {
         if(pageSize <= 0 || page < 0) {
             throw new IllegalArgumentException("invalid page size: " + pageSize);
@@ -334,6 +379,25 @@ public class TestExecutionClientImpl implements TestExecutionClient {
         }
 
         return sourceList.subList(fromIndex, Math.min(fromIndex + pageSize, sourceList.size()));
+    }
+
+    /**
+
+     * Filters all the manual test executions
+     *
+     * @param testExecutions
+     * @return
+     */
+    public List<Feature> getManualTestExecutions(List<Feature> testExecutions) {
+        List<Feature> manualTestExecutions = new ArrayList<>();
+        String[] automationKeywords = {"automated", "automation"};
+
+        for (Feature testExecution : testExecutions) {
+            if (!Arrays.stream(automationKeywords).parallel().anyMatch(testExecution.getsName().toLowerCase()::contains)) {
+                manualTestExecutions.add(testExecution);
+            }
+        }
+        return manualTestExecutions;
     }
 
     /**
