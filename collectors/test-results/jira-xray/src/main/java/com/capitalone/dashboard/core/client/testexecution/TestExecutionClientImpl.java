@@ -168,7 +168,6 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
     private List<TestCase> getTestCases(Iterable<TestExecution.Test> tests, Feature testExec) {
-        LOGGER.info("Enterd in to get steps");
         List<TestCase> testCases = new ArrayList<>();
 
         for (TestExecution.Test test : tests) {
@@ -216,7 +215,6 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
     private List<TestCaseStep> getTestSteps(TestRun testRun) {
-        LOGGER.info("Enterd in to gettestSteps");
         List<TestCaseStep> testSteps = new ArrayList<>();
 
         for (TestStep testStep : testRun.getSteps()) {
