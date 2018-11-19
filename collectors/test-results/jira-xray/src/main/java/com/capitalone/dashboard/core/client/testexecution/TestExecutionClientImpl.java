@@ -115,17 +115,17 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
                 // Set collectoritemid for manual test results
 
-                if (testExec.getsTeamID() != null) {
+               /* if (testExec.getsTeamID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraTeamId(testExec.getsTeamID()).getId();
                 } else if (testExec.getsProjectID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraProjectId(testExec.getsProjectID()).getId();
                 } else {
                     CollectorItem collectorItem = new CollectorItem();
                     collectorItemId = collectorItem.getId();
-                }
+                }*/
 
                 TestResult testResult = new TestResult();
-                testResult.setCollectorItemId(collectorItemId);
+                //testResult.setCollectorItemId(collectorItemId);
                 testResult.setDescription(testExec.getsName());
 
                 testResult.setTargetAppName(testExec.getsProjectName());
@@ -190,8 +190,8 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                         testResult.setTestCapabilities(capabilities);
                     }
 
-                } catch (URISyntaxException u) {
-                    LOGGER.error("URI Syntax Invalid");
+                } catch (Exception e) {
+
                 }
                 testResultsToSave.add(testResult);
             }
@@ -209,7 +209,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
      * @param testExec
      * @return
      */
-    private List<TestCase> getTestCases(Iterable<TestExecution.Test> tests, Feature testExec) {
+    public List<TestCase> getTestCases(Iterable<TestExecution.Test> tests, Feature testExec) {
         List<TestCase> testCases = new ArrayList<>();
 
         for (TestExecution.Test test : tests) {
@@ -263,7 +263,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
      * @return
      */
 
-    private List<TestCaseStep> getTestSteps(TestRun testRun) {
+    public List<TestCaseStep> getTestSteps(TestRun testRun) {
 
         List<TestCaseStep> testSteps = new ArrayList<>();
 

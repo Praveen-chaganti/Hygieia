@@ -1,48 +1,45 @@
-/*
+
 package com.capitalone.dashboard.client.testexecution;
 
-import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
-import com.atlassian.util.concurrent.Promise;
 import com.capitalone.dashboard.TestResultSettings;
 import com.capitalone.dashboard.api.JiraXRayRestClient;
-import com.capitalone.dashboard.api.TestExecutionRestClient;
 import com.capitalone.dashboard.api.domain.TestExecution;
+import com.capitalone.dashboard.api.domain.TestRun;
+import com.capitalone.dashboard.api.domain.TestStep;
 import com.capitalone.dashboard.core.client.JiraXRayRestClientImpl;
 import com.capitalone.dashboard.core.client.JiraXRayRestClientSupplier;
 import com.capitalone.dashboard.core.client.TestExecutionRestClientImpl;
-import com.capitalone.dashboard.core.client.TestRunRestClientImpl;
 import com.capitalone.dashboard.core.client.testexecution.TestExecutionClient;
 import com.capitalone.dashboard.core.client.testexecution.TestExecutionClientImpl;
-import com.capitalone.dashboard.core.json.TestArrayJsonParser;
-import com.capitalone.dashboard.model.CollectorItem;
+import com.capitalone.dashboard.core.json.util.RendereableItem;
+import com.capitalone.dashboard.core.json.util.RendereableItemImpl;
+import com.capitalone.dashboard.model.TestCase;
+import com.capitalone.dashboard.model.TestCaseStatus;
+import com.capitalone.dashboard.model.TestCaseStep;
 import com.capitalone.dashboard.model.Feature;
+
 import com.capitalone.dashboard.repository.CollectorItemRepository;
 import com.capitalone.dashboard.repository.FeatureRepository;
 import com.capitalone.dashboard.repository.TestResultCollectorRepository;
 import com.capitalone.dashboard.repository.TestResultRepository;
-import org.bson.types.ObjectId;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.atlassian.util.concurrent.Promises.when;
-import static org.mockito.Matchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
+@PrepareForTest(TestExecutionRestClientImpl.class)
 public class TestExecutionClientImplTest {
 
     private TestResultSettings testResultSettings;
@@ -52,46 +49,70 @@ public class TestExecutionClientImplTest {
     private TestResultCollectorRepository testResultCollectorRepository;
     @Mock
     private FeatureRepository featureRepository;
-    @Autowired
-    private CollectorItemRepository collectorItemRepository;
     @Mock
-    private JiraXRayRestClient restClient;
+    private CollectorItemRepository collectorItemRepository;
+
     @Mock
     private JiraXRayRestClientSupplier restClientSupplier;
     @Mock
-    private DisposableHttpClient httpClient;
-    @Mock
-    private Promise pr;
-    @Mock
-    private TestExecution testExecution;
-    @Mock
-    private TestExecutionRestClient testExecutionRestClient;
-    @Mock
-    private TestExecutionRestClientImpl testExecutionRestClientImpl;
+    private JiraXRayRestClientImpl restClient;
+
 
     TestExecutionClientImpl testExecutionClientimpl;
 
     @Before
     public final void init(){
+        MockitoAnnotations.initMocks(this);
         testResultSettings = new TestResultSettings();
         testExecutionClientimpl = new TestExecutionClientImpl(testResultRepository, testResultCollectorRepository, featureRepository, collectorItemRepository, testResultSettings, restClientSupplier);
         testResultSettings.setPageSize(20);
-        Mockito.when(pr.claim()).thenReturn(createTests());
-        //restClient = new JiraXRayRestClientImpl(URI.create(""), httpClient);
-        //testExecutionRestClient = restClient.getTestExecutionClient();
-        //testExecutionRestClientImpl = new TestExecutionRestClientImpl(URI.create(""), httpClient);
+        restClient = new Mockito().mock(JiraXRayRestClientImpl.class);
     }
 
     @Test
-    public void updateInformation() throws Exception {
-        TestExecution testExecution = new TestExecution(URI.create(""), "ABC13", 12357L);
+    public void updateInformation(){
+        TestExecution testExecution = new TestExecution(URI.create(""), "CRM-1985", 7689L);
 
-        Mockito.when(featureRepository.getStoryByType("Test Execution")).thenReturn(createFeature());
-        Mockito.when(restClient.getTestExecutionClient().getTests(any()).claim()).thenReturn(createTests());
-
+       Mockito.when(featureRepository.getStoryByType("Test Execution")).thenReturn(createFeature());
+      // Mockito.when(restClient.getTestExecutionClient().getTests(Matchers.anyObject()).claim()).thenReturn(createTests());
         int cnt = testExecutionClientimpl.updateTestResultInformation();
+        Assert.assertEquals(1, cnt);
+
+    }
 
 
+    @Test
+    public void getTestCases() {
+        Iterable<TestStep> testSteps = new ArrayList<>();
+        TestStep testStep = new TestStep(URI.create(""), "DEF678", 1234L, 1, null, null, null, TestStep.Status.PASS);
+        ((ArrayList<TestStep>) testSteps).add(testStep);
+        TestRun testRun = new TestRun(URI.create("myurl.com"), "Abc123", 3456L, TestRun.Status.PASS, null, null, null, null, testSteps);
+        List<TestCase> testCases = testExecutionClientimpl.getTestCases(createTests(), createFeature().get(0));
+        for(TestCase testCase : testCases){
+            Assert.assertEquals(null, testCase.getId());
+            Assert.assertEquals("DEF678","DEF678" );
+            Assert.assertEquals(0, testCase.getTotalTestStepCount());
+            Assert.assertEquals(0, testCase.getSuccessTestStepCount());
+            Assert.assertEquals(TestCaseStatus.Unknown, testCase.getStatus());
+        }
+
+
+    }
+
+    @Test
+    public void validateGetTestSteps(){
+        Iterable<TestStep> testSteps = new ArrayList<>();
+        RendereableItem rendereableItem = new RendereableItemImpl("hello", "");
+        TestStep testStep =new TestStep(URI.create(""), "", 1234L, 1,rendereableItem, null, null, TestStep.Status.PASS);
+        ((ArrayList<TestStep>) testSteps).add(testStep);
+        TestRun testRun = new TestRun(URI.create("myurl.com"), "Abc123", 3456L, TestRun.Status.PASS , null, null, null, null,testSteps);
+
+        List<TestCaseStep> testCaseSteps = testExecutionClientimpl.getTestSteps(testRun);
+        for(TestCaseStep step : testCaseSteps){
+            Assert.assertEquals("1234", step.getId());
+            Assert.assertEquals("hello", step.getDescription());
+            Assert.assertEquals(TestCaseStatus.Success, step.getStatus());
+        }
     }
 
     private List<Feature> createFeature() {
@@ -101,7 +122,7 @@ public class TestExecutionClientImplTest {
         feature1.setsName("summary1001");
         feature1.setsProjectName("Hygieia");
         feature1.setsTypeName("Test Execution");
-        feature1.setsNumber("ABC123");
+        feature1.setsNumber("CAB1985");
         feature1.setsUrl("http://myurl.com");
         feature1.setsId("123");
         feature1.setsProjectName("Hygieia");
@@ -122,5 +143,5 @@ public class TestExecutionClientImplTest {
 
 
 
+
 }
-*/
