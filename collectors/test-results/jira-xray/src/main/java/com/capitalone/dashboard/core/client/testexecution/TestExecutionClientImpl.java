@@ -113,19 +113,19 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
             for (Feature testExec : currentPagedTestExecutions) {
 
-                // Set collectoritemid for manual test results
+                //Set collectoritemid for manual test results
 
-               /* if (testExec.getsTeamID() != null) {
+               if (testExec.getsTeamID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraTeamId(testExec.getsTeamID()).getId();
                 } else if (testExec.getsProjectID() != null) {
                     collectorItemId = this.collectorItemRepository.findByJiraProjectId(testExec.getsProjectID()).getId();
                 } else {
                     CollectorItem collectorItem = new CollectorItem();
                     collectorItemId = collectorItem.getId();
-                }*/
+                }
 
                 TestResult testResult = new TestResult();
-                //testResult.setCollectorItemId(collectorItemId);
+                testResult.setCollectorItemId(collectorItemId);
                 testResult.setDescription(testExec.getsName());
 
                 testResult.setTargetAppName(testExec.getsProjectName());
