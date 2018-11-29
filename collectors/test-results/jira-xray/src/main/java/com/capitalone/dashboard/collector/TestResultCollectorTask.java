@@ -4,10 +4,7 @@ import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
 import com.capitalone.dashboard.TestResultSettings;
 import com.capitalone.dashboard.core.client.JiraXRayRestClientSupplier;
 import com.capitalone.dashboard.model.TestResultCollector;
-import com.capitalone.dashboard.repository.BaseCollectorRepository;
-import com.capitalone.dashboard.repository.FeatureRepository;
-import com.capitalone.dashboard.repository.TestResultCollectorRepository;
-import com.capitalone.dashboard.repository.TestResultRepository;
+import com.capitalone.dashboard.repository.*;
 import com.capitalone.dashboard.core.client.testexecution.TestExecutionClientImpl;
 import com.capitalone.dashboard.util.CoreFeatureSettings;
 import com.capitalone.dashboard.util.FeatureCollectorConstants;
@@ -32,6 +29,7 @@ public class TestResultCollectorTask extends CollectorTask<TestResultCollector> 
     DisposableHttpClient httpClient;
 
     CoreFeatureSettings coreFeatureSettings;
+    private CollectorItemRepository collectorItemRepository;
 
     /**
      * Default constructor for the collector task. This will construct this
@@ -47,7 +45,7 @@ public class TestResultCollectorTask extends CollectorTask<TestResultCollector> 
     @Autowired
     public TestResultCollectorTask(CoreFeatureSettings coreFeatureSettings, TaskScheduler taskScheduler, TestResultRepository testResultRepository,
                                    TestResultCollectorRepository testResultCollectorRepository, TestResultSettings testResultSettings,
-                                   FeatureRepository featureRepository, JiraXRayRestClientSupplier restClientSupplier) {
+                                   FeatureRepository featureRepository, JiraXRayRestClientSupplier restClientSupplier,CollectorItemRepository collectorItemRepository) {
         super(taskScheduler, FeatureCollectorConstants.JIRA_XRAY);
         this.testResultRepository = testResultRepository;
         this.testResultCollectorRepository = testResultCollectorRepository;
@@ -55,6 +53,7 @@ public class TestResultCollectorTask extends CollectorTask<TestResultCollector> 
         this.testResultSettings = testResultSettings;
         this.featureRepository = featureRepository;
         this.restClientSupplier = restClientSupplier;
+        this.collectorItemRepository = collectorItemRepository;
         this.httpClient = httpClient;
     }
 
@@ -95,7 +94,7 @@ public class TestResultCollectorTask extends CollectorTask<TestResultCollector> 
         try {
             long testExecutionDataStart = System.currentTimeMillis();
             TestExecutionClientImpl testExecutionData = new TestExecutionClientImpl(this.testResultRepository, this.testResultCollectorRepository,
-                    this.featureRepository, this.testResultSettings, this.restClientSupplier);
+                    this.featureRepository, this.testResultSettings, this.restClientSupplier, collectorItemRepository);
             count = testExecutionData.updateTestResultInformation();
 
             log("Test Execution Data", testExecutionDataStart, count);

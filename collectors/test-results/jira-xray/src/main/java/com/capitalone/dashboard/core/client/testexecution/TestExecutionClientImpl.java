@@ -7,6 +7,7 @@ import com.capitalone.dashboard.api.domain.TestStep;
 import com.capitalone.dashboard.core.client.JiraXRayRestClientImpl;
 import com.capitalone.dashboard.core.client.JiraXRayRestClientSupplier;
 import com.capitalone.dashboard.model.*;
+import com.capitalone.dashboard.repository.CollectorItemRepository;
 import com.capitalone.dashboard.repository.FeatureRepository;
 import com.capitalone.dashboard.repository.TestResultCollectorRepository;
 import com.capitalone.dashboard.repository.TestResultRepository;
@@ -25,14 +26,16 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     private final FeatureRepository featureRepository;
     private JiraXRayRestClientImpl restClient;
     private final JiraXRayRestClientSupplier restClientSupplier;
+    private final CollectorItemRepository collectorItemRepository;
 
     public TestExecutionClientImpl(TestResultRepository testResultRepository, TestResultCollectorRepository testResultCollectorRepository,
-                                   FeatureRepository featureRepository, TestResultSettings testResultSettings, JiraXRayRestClientSupplier restClientSupplier) {
+                                   FeatureRepository featureRepository, TestResultSettings testResultSettings, JiraXRayRestClientSupplier restClientSupplier, CollectorItemRepository collectorItemRepository) {
         this.testResultRepository = testResultRepository;
         this.testResultCollectorRepository = testResultCollectorRepository;
         this.featureRepository = featureRepository;
         this.testResultSettings = testResultSettings;
         this.restClientSupplier = restClientSupplier;
+        this.collectorItemRepository = collectorItemRepository;
     }
 
 
@@ -95,8 +98,8 @@ public class TestExecutionClientImpl implements TestExecutionClient {
             for (Feature testExec : currentPagedTestExecutions) {
 
                 TestResult testResult = new TestResult();
-
-//                testResult.setCollectorItemId(jiraXRayFeatureId);
+                CollectorItem collectorItem = createCollectorItem(testExec);
+                testResult.setCollectorItemId(collectorItem.getId());
                 testResult.setDescription(testExec.getsName());
 
                 testResult.setTargetAppName(testExec.getsProjectName());
@@ -179,7 +182,7 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
                 testCase.setId(testRun.getId().toString());
                 testCase.setDescription(test.toString());
-                if (testRun.getSteps() != null) {
+
                     int totalSteps = (int) testRun.getSteps().spliterator().getExactSizeIfKnown();
                     Map<String, Integer> stepCountByStatus = this.getStepCountStatusMap(testRun);
 
@@ -203,8 +206,6 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     }
 
                     testCase.setTestSteps(this.getTestSteps(testRun));
-
-                }
             }catch(Exception e){
 
             }
@@ -355,4 +356,22 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 
         return data;
     }
+
+    private CollectorItem createCollectorItem(Feature testExec) {
+        List<TestResultCollector> collector = testResultCollectorRepository.findByCollectorTypeAndName(CollectorType.TestResult, "Jira XRay");
+        TestResultCollector collector1 = collector.get(0);
+        CollectorItem tempCi = new CollectorItem();
+        tempCi.setCollectorId(collector1.getId());
+        tempCi.setDescription("JIRAXRay:"+testExec.getsName());
+        tempCi.setPushed(true);
+        tempCi.setLastUpdated(System.currentTimeMillis());
+        Map<String, Object> option = new HashMap<>();
+        option.put("jobName", testExec.getsName());
+        option.put("instanceUrl", testExec.getsUrl());
+        tempCi.getOptions().putAll(option);
+        collectorItemRepository.save(tempCi);
+        return tempCi;
+
+    }
+
 }
