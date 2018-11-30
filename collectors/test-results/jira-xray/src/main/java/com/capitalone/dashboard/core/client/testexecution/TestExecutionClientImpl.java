@@ -96,9 +96,12 @@ public class TestExecutionClientImpl implements TestExecutionClient {
 //            ObjectId jiraXRayFeatureId = testResultCollectorRepository.findByName(FeatureCollectorConstants.JIRA_XRAY).getId();
 
             for (Feature testExec : currentPagedTestExecutions) {
-
-                TestResult testResult = new TestResult();
                 CollectorItem collectorItem = createCollectorItem(testExec);
+                TestResult testResult = testResultRepository.findByCollectorItemId(collectorItem.getId());
+                if(testResult == null) {
+                    testResult = new TestResult();
+                }
+
                 testResult.setCollectorItemId(collectorItem.getId());
                 testResult.setDescription(testExec.getsName());
 
@@ -204,10 +207,9 @@ public class TestExecutionClientImpl implements TestExecutionClient {
                     } else {
                         testCase.setStatus(TestCaseStatus.Unknown);
                     }
-
                     testCase.setTestSteps(this.getTestSteps(testRun));
-            }catch(Exception e){
-
+            }catch (Exception e) {
+                LOGGER.error("Unable to get the Test Step: " + e);
             }
             testCases.add(testCase);
         }
@@ -272,7 +274,6 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     private Map<String,Integer> getStepCountStatusMap(TestRun testRun) {
         Map<String,Integer> map = new HashMap<>(4);
         int failStepCount = 0, passStepCount = 0, skipStepCount = 0, unknownStepCount = 0;
-        long start = System.currentTimeMillis();
         for (TestStep testStep : testRun.getSteps()) {
 
             if (testStep.getStatus().toString().equals("PASS")) {
@@ -358,18 +359,25 @@ public class TestExecutionClientImpl implements TestExecutionClient {
     }
 
     private CollectorItem createCollectorItem(Feature testExec) {
-        List<TestResultCollector> collector = testResultCollectorRepository.findByCollectorTypeAndName(CollectorType.TestResult, "Jira XRay");
+        List<TestResultCollector> collector = testResultCollectorRepository.findByCollectorTypeAndName(CollectorType.Test, "Jira XRay");
         TestResultCollector collector1 = collector.get(0);
+        CollectorItem existing = collectorItemRepository.findByCollectorIdNiceNameAndJobName(collector1.getId(), "Manual", testExec.getsName());
         CollectorItem tempCi = new CollectorItem();
-        tempCi.setCollectorId(collector1.getId());
-        tempCi.setDescription("JIRAXRay:"+testExec.getsName());
-        tempCi.setPushed(true);
-        tempCi.setLastUpdated(System.currentTimeMillis());
-        Map<String, Object> option = new HashMap<>();
-        option.put("jobName", testExec.getsName());
-        option.put("instanceUrl", testExec.getsUrl());
-        tempCi.getOptions().putAll(option);
-        collectorItemRepository.save(tempCi);
+        Optional<CollectorItem> optionalCollectorItem = Optional.ofNullable(existing);
+        if(optionalCollectorItem.isPresent()) {
+            tempCi.setId(existing.getId());
+        }else {
+            tempCi.setCollectorId(collector1.getId());
+            tempCi.setDescription("JIRAXRay:" + testExec.getsName());
+            tempCi.setPushed(true);
+            tempCi.setLastUpdated(System.currentTimeMillis());
+            tempCi.setNiceName("Manual");
+            Map<String, Object> option = new HashMap<>();
+            option.put("jobName", testExec.getsName());
+            option.put("instanceUrl", testExec.getsUrl());
+            tempCi.getOptions().putAll(option);
+            collectorItemRepository.save(tempCi);
+        }
         return tempCi;
 
     }
