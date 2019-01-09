@@ -94,7 +94,7 @@ public class TestResultCollectorTask extends CollectorTask<TestResultCollector> 
         try {
             long testExecutionDataStart = System.currentTimeMillis();
             TestExecutionClientImpl testExecutionData = new TestExecutionClientImpl(this.testResultRepository, this.testResultCollectorRepository,
-                    this.featureRepository, this.testResultSettings, this.restClientSupplier, collectorItemRepository);
+                    this.featureRepository,this.collectorItemRepository, this.testResultSettings, this.restClientSupplier);
             count = testExecutionData.updateTestResultInformation();
 
             log("Test Execution Data", testExecutionDataStart, count);
