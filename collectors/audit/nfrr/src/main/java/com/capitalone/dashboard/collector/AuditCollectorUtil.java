@@ -245,7 +245,7 @@ public class AuditCollectorUtil {
             if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FAIL.name()) || auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FOUND_HIGH.name()) || auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FOUND_CRITICAL.name())){
                 audit.setAuditStatus(AuditStatus.FAIL);
                 audit.setDataStatus(DataStatus.OK);
-            }else if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_OK.name()) ){
+            }else if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_OK.name()) && (!audit.getAuditStatus().equals(AuditStatus.FAIL)) ){
                 audit.setAuditStatus(AuditStatus.OK);
                 audit.setDataStatus(DataStatus.OK);
             }else {
