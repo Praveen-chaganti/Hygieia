@@ -241,17 +241,16 @@ public class AuditCollectorUtil {
                 audit.getUrl().add((String) ((JSONObject) o).get(STR_URL));
             }
         }
-
-            if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FAIL.name()) || auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FOUND_HIGH.name()) || auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FOUND_CRITICAL.name())){
-                audit.setAuditStatus(AuditStatus.FAIL);
-                audit.setDataStatus(DataStatus.OK);
-            }else if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_OK.name()) && (!audit.getAuditStatus().equals(AuditStatus.FAIL)) ){
-                audit.setAuditStatus(AuditStatus.OK);
-                audit.setDataStatus(DataStatus.OK);
-            }else {
-                audit.setAuditStatus(AuditStatus.NA);
-                audit.setDataStatus(DataStatus.NO_DATA);
-            }
+        if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FAIL.name()) || auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FOUND_HIGH.name()) || auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_FOUND_CRITICAL.name())){
+            audit.setAuditStatus(AuditStatus.FAIL);
+            audit.setDataStatus(DataStatus.OK);
+        }else if(auditStatuses.contains(CodeQualityAuditStatus.STATIC_SECURITY_SCAN_OK.name()) && (!audit.getAuditStatus().equals(AuditStatus.FAIL)) ){
+            audit.setAuditStatus(AuditStatus.OK);
+            audit.setDataStatus(DataStatus.OK);
+        }else {
+            audit.setAuditStatus(AuditStatus.NA);
+            audit.setDataStatus(DataStatus.NO_DATA);
+        }
         return audit;
     }
 
